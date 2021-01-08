@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 )
 
 type Question struct {
@@ -21,6 +22,7 @@ var questions Questions
 func main() {
 	var (
 		fileName = flag.String("file", "problems.csv", "CSV File to Read Problems From")
+		duration = flag.Int64("time", 5, "Time Duration To Wait for Answer")
 	)
 
 	flag.Parse()
@@ -43,16 +45,32 @@ func main() {
 		}
 		questions = append(questions, Question{Text: rawText[0], Answer: strings.TrimSpace(rawText[1])})
 	}
-
+	userAnswer := make(chan string)
 	var answer string
 	var correctAnswer int
+	timer := time.NewTimer(time.Duration(*duration) * time.Second)
 	for i, qn := range questions {
+
 		fmt.Printf("Question #%d: %s", i+1, qn.Text)
-		fmt.Printf("\nYour Answer: ")
-		fmt.Scanf("%s", &answer)
-		if answer == qn.Answer {
-			correctAnswer++
+		select {
+
+		case <-timer.C:
+			fmt.Println("\nYour time has expired")
+			os.Exit(0)
+		case answer = <-userAnswer:
+
+			fmt.Printf("\nYour Answer: ")
+			fmt.Scanf("%s", &answer)
+			if answer == qn.Answer {
+				correctAnswer++
+			}
 		}
+
+		func() {
+			fmt.Scanf("%s", &answer)
+			userAnswer <- answer
+		}()
+
 	}
 	fmt.Printf("You answered %d/%d questions correctly\n", correctAnswer, len(questions))
 }
