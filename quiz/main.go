@@ -15,9 +15,7 @@ type Question struct {
 	Answer string
 }
 
-type Questions []Question
-
-var questions Questions
+var questions = make([]Question, 0)
 
 func main() {
 	var (
@@ -52,24 +50,22 @@ func main() {
 	for i, qn := range questions {
 
 		fmt.Printf("Question #%d: %s", i+1, qn.Text)
+		go func() {
+			fmt.Printf("\nYour Answer: ")
+			fmt.Scanf("%s", &answer)
+			userAnswer <- answer
+		}()
 		select {
 
 		case <-timer.C:
 			fmt.Println("\nYour time has expired")
 			os.Exit(0)
-		case answer = <-userAnswer:
 
-			fmt.Printf("\nYour Answer: ")
-			fmt.Scanf("%s", &answer)
+		case answer = <-userAnswer:
 			if answer == qn.Answer {
 				correctAnswer++
 			}
 		}
-
-		func() {
-			fmt.Scanf("%s", &answer)
-			userAnswer <- answer
-		}()
 
 	}
 	fmt.Printf("You answered %d/%d questions correctly\n", correctAnswer, len(questions))
